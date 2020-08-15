@@ -1,0 +1,102 @@
+---
+title: "Health_Data"
+author: "Nora Wu"
+date: "August 13, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+education_data <- read.csv("education_ChinaHouse.csv")
+```
+
+```{r}
+View(education_data)
+head(education_data)
+# Some laptops might need to do this 
+#colnames(education_data)[colnames(education_data)=="?..Country.Name"] <- "countryname"
+
+colnames(education_data)[colnames(education_data)=="Country.Name"] <- "countryname"
+
+```
+
+
+### Time seires 
+
+```{r}         
+education_sub <- education_data %>%
+  subset(Country.Code== "SGP" | Country.Code== "KOR" | Country.Code== "CHN" | Country.Code== "EAS")  %>%
+  filter( Indicator.Name == "Population ages 0-14 (% of total population)") %>%
+  gather("year", "value", "X1996": "X2019") 
+
+education_sub$year_1 =  as.numeric(gsub("X", "", education_sub$year))
+
+ggplot(education_sub, aes(x=year_1, y= value, color=countryname)) + 
+  geom_line(size=1)  + 
+  labs(title = "Population ages 0-14 (% of total population)",
+       subtitle = "1996 - 2019",
+       x = "Year", 
+       y = "Population ages 0-14 (% of total population)",
+       color = "Country") 
+```
+
+```{r}
+
+education_sub_2 <- education_data %>%
+  subset(Country.Code== "SGP" | Country.Code== "KOR" | Country.Code== "CHN" | Country.Code== "EAS")  %>%
+  filter( Indicator.Name == "Population ages 15-64 (% of total population)") %>%
+  gather("year", "value", "X1996": "X2019") 
+
+education_sub_2$year_1 =  as.numeric(gsub("X", "", education_sub_2$year))
+
+ggplot(education_sub_2, aes(x=year_1, y= value, color=countryname)) + 
+  geom_line(size=1)  + 
+  labs(title = "Population ages 15-64 (% of total population)",
+       subtitle = "1996 - 2019",
+       x = "Year", 
+       y = "Population ages 15-64 (% of total population)",
+       color = "Country") 
+```
+
+#### Adult literacy rate - global, 2018
+
+```{r}
+education_lit <- 
+  education_data %>%
+  filter( Indicator.Name == "Literacy rate, adult total (% of people ages 15 and above)") %>%
+  select( countryname, Indicator.Name, X2018)%>%
+  filter(!is.na(X2018)) 
+
+education_lit %>%
+  summarize(countries = n(),
+            max_adult_literatcy_rate = max(X2018),
+            min_adult_literatcy_rate = min(X2018),
+            mean_adult_literatcy_rate = mean(X2018)) %>%
+  mutate(china_adult_literatcy_rate = education_lit$X2018[14]) 
+
+```
+
+
+
+#### Country specific 
+
+```{r}
+#unique(edu_China$Indicator.Name)
+
+edu_China <- education_data %>%
+  subset(Country.Code== "CHN" ) %>%
+  select(countryname, Indicator.Name, X2018) %>%
+  filter(!is.na(X2018)) %>%
+    filter( Indicator.Name == "School enrollment, primary (gross), gender parity index (GPI)"| Indicator.Name == "School enrollment, primary and secondary (gross), gender parity index (GPI)"| Indicator.Name == "School enrollment, tertiary (gross), gender parity index (GPI)") 
+
+
+ggplot(edu_China, aes(X2018, Indicator.Name))+geom_bar(stat="identity")+theme_bw()+xlab("School enrollment in 2018") + ylab("")
+```
